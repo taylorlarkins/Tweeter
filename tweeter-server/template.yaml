@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SAM config for Tweeter server
+
+#
+# Global Lambda function properties. These apply to every Lambda function.
+#
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    CodeUri: ./dist/
+    Layers:
+      - !Ref tweeterLayer
+    Timeout: 30
+    MemorySize: 128
+
+#
+# Reusable blocks of configuration. These are referenced throughout the template to avoid duplication.
+# &identifier is used to define a reusable block, and *identifier is used to reference it.
+#
+Metadata:
+  x-common-policies: &commonPolicies
+    - AWSLambdaBasicExecutionRole
+    - AmazonSESFullAccess
+    - CloudWatchFullAccess
+    - AmazonDynamoDBFullAccess
+    - AmazonS3FullAccess
+    - AmazonSQSFullAccess
+
+  x-common-cors-headers: &commonCorsHeaders
+    method.response.header.Access-Control-Allow-Origin: "'*'"
+
+  x-common-swagger-response-headers: &commonSwaggerResponseHeaders
+    Access-Control-Allow-Origin:
+      type: string
+
+Resources:
