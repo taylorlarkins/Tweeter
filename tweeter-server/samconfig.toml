@@ -6,4 +6,4 @@ s3_bucket = "cs340-tweeter-deployment"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_NAMED_IAM"
-image_repositories = []`
+image_repositories = []

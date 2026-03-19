@@ -35,3 +35,33 @@ Metadata:
       type: string
 
 Resources:
+  #
+  # Lambda Layer (reused by all Lambda functions)
+  #
+  tweeterLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: tweeterLayer
+      Description: dependencies layer for Tweeter server
+      ContentUri: ./layer/
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: DELETE
+
+  #
+  # Lambda functions
+  #
+
+  getFollowersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getFollowersFunction
+      Handler: lambda/follow/GetFollowersLambda.handler
+      Policies: *commonPolicies
+
+  getFolloweesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getFolloweesFunction
+      Handler: lambda/follow/GetFolloweesLambda.handler
+      Policies: *commonPolicies
