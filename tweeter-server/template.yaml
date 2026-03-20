@@ -36,6 +36,93 @@ Metadata:
 
 Resources:
   #
+  # Web API
+  #
+
+  tweeterApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: tweeterApi
+      StageName: prod
+      Cors:
+        AllowMethods: "'POST'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          title: "Tweeter API"
+          version: "1.0"
+        x-common-consumes: &commonConsumes
+          - application/json
+        x-common-produces: &commonProduces
+          - application/json
+        x-common-request-templates: &commonRequestTemplates
+          application/json: $input.json('$')
+        x-common-amazon-responses: &commonAmazonResponses
+          default:
+            statusCode: 200
+            responseParameters: *commonCorsHeaders
+          ".*bad-request.*":
+            statusCode: 400
+            responseParameters: *commonCorsHeaders
+            responseTemplates:
+              application/json: '{ "error": "$input.path(''$.errorMessage'')" }'
+          ".*internal-server-error.*":
+            statusCode: 500
+            responseParameters: *commonCorsHeaders
+            responseTemplates:
+              application/json: '{ "error": "$input.path(''$.errorMessage'')" }'
+        x-common-swagger-responses: &commonSwaggerResponses
+          "200":
+            description: "OK"
+            headers: *commonSwaggerResponseHeaders
+          "400":
+            description: "Bad Request"
+            headers: *commonSwaggerResponseHeaders
+          "500":
+            description: "Internal Server Error"
+            headers: *commonSwaggerResponseHeaders
+        paths:
+          #
+          # Endpoint definitions
+          #
+
+          /follow/getFollowers:
+            post:
+              summary: "Get Followers"
+              description: "Returns a paginated list of users who follow the specified user."
+              consumes: *commonConsumes
+              produces: *commonProduces
+              x-amazon-apigateway-integration:
+                type: aws
+                httpMethod: POST
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getFollowersFunction.Arn}/invocations
+                requestTemplates: *commonRequestTemplates
+                responses: *commonAmazonResponses
+              responses: *commonSwaggerResponses
+
+          /follow/getFollowees:
+            post:
+              summary: "Get Followees"
+              description: "Returns a paginated list of users that the specified user is following."
+              consumes: *commonConsumes
+              produces: *commonProduces
+              x-amazon-apigateway-integration:
+                type: aws
+                httpMethod: POST
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getFolloweesFunction.Arn}/invocations
+                requestTemplates: *commonRequestTemplates
+                responses: *commonAmazonResponses
+              responses: *commonSwaggerResponses
+
+          #
+          # TODO: ADD MORE ENDPOINT DEFINITIONS HERE
+          #
+
+  #
   # Lambda Layer (reused by all Lambda functions)
   #
   tweeterLayer:
@@ -49,7 +136,7 @@ Resources:
       RetentionPolicy: DELETE
 
   #
-  # Lambda functions
+  # Web API Lambda functions
   #
 
   getFollowersFunction:
@@ -58,6 +145,13 @@ Resources:
       FunctionName: getFollowersFunction
       Handler: lambda/follow/GetFollowersLambda.handler
       Policies: *commonPolicies
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref tweeterApi
+            Path: /follow/getFollowers
+            Method: POST
 
   getFolloweesFunction:
     Type: AWS::Serverless::Function
@@ -65,3 +159,14 @@ Resources:
       FunctionName: getFolloweesFunction
       Handler: lambda/follow/GetFolloweesLambda.handler
       Policies: *commonPolicies
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref tweeterApi
+            Path: /follow/getFollowees
+            Method: POST
+
+  #
+  # TODO: ADD MORE WEB API LAMBDA DEFINITIONS HERE
+  #
