@@ -1,7 +1,7 @@
 import { NavigateFunction } from "react-router-dom";
 import { User, AuthToken } from "tweeter-shared";
 import { View, Presenter } from "./Presenter";
-import { UserService } from "../model.service/UserService";
+import { UserService } from "../model/service/UserService";
 
 export interface AuthenticationView extends View {
   authenticate: (user: User, authToken: AuthToken) => void;

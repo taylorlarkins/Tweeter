@@ -1,5 +1,5 @@
 import { AuthToken, User } from "tweeter-shared";
-import { FollowService } from "../model.service/FollowService";
+import { FollowService } from "../model/service/FollowService";
 import { NavigateFunction } from "react-router-dom";
 import { MessageView, Presenter } from "./Presenter";
 

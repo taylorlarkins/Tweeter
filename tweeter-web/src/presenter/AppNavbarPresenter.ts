@@ -1,4 +1,4 @@
-import { UserService } from "../model.service/UserService";
+import { UserService } from "../model/service/UserService";
 import { AuthToken } from "tweeter-shared";
 import { MessageView, Presenter } from "./Presenter";
 

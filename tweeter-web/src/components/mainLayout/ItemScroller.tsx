@@ -7,7 +7,7 @@ import {
   PagedItemPresenter,
   PagedItemView,
 } from "../../presenter/PagedItemPresenter";
-import { Service } from "../../model.service/Service";
+import { Service } from "../../model/service/Service";
 
 interface Props<T, U extends Service> {
   presenterFactory: (view: PagedItemView<T>) => PagedItemPresenter<T, U>;
