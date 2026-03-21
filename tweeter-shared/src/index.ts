@@ -14,10 +14,16 @@ export type { UserDto } from "./model/dto/UserDto";
 // Requests
 export type { TweeterRequest } from "./model/net/request/TweeterRequest";
 export type { PagedUserItemRequest } from "./model/net/request/PagedUserItemRequest";
+export type { IsFollowerRequest } from "./model/net/request/IsFollowerRequest";
+export type { GetFollowCountRequest } from "./model/net/request/GetFollowCountRequest";
+export type { FollowActionRequest } from "./model/net/request/FollowActionRequest";
 
 // Responses
 export type { TweeterResponse } from "./model/net/response/TweeterResponse";
 export type { PagedUserItemResponse } from "./model/net/response/PagedUserItemResponse";
+export type { IsFollowerResponse } from "./model/net/response/IsFollowerResponse";
+export type { GetFollowCountResponse } from "./model/net/response/GetFollowCountResponse";
+export type { FollowActionResponse } from "./model/net/response/FollowActionResponse";
 
 // Other
 export { FakeData } from "./util/FakeData";

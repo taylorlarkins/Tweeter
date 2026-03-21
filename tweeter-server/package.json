@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "npm run compile",
+    "build": "npm run build:shared && npm run copy:shared && npm run compile",
+    "build:shared": "cd ../tweeter-shared && npm run compile",
+    "copy:shared": "cp ../tweeter-shared/package.json layer/nodejs/node_modules/tweeter-shared/ && cp -r ../tweeter-shared/dist/. layer/nodejs/node_modules/tweeter-shared/dist/",
     "compile": "npm run clean && tsc",
     "clean": "rimraf dist"
   },

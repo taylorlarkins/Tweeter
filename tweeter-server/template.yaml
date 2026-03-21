@@ -167,6 +167,41 @@ Resources:
             Path: /follow/getFollowees
             Method: POST
 
+  getIsFollowerStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getIsFollowerStatusFunction
+      Handler: lambda/follow/GetIsFollowerStatusLambda.handler
+      Policies: *commonPolicies
+
+  getFolloweeCountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getFolloweeCountFunction
+      Handler: lambda/follow/GetFolloweeCountLambda.handler
+      Policies: *commonPolicies
+
+  getFollowerCountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getFollowerCountFunction
+      Handler: lambda/follow/GetFollowerCountLambda.handler
+      Policies: *commonPolicies
+
+  followFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: followFunction
+      Handler: lambda/follow/FollowLambda.handler
+      Policies: *commonPolicies
+
+  unfollowFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: unfollowFunction
+      Handler: lambda/follow/UnfollowLambda.handler
+      Policies: *commonPolicies
+
   #
   # TODO: ADD MORE WEB API LAMBDA DEFINITIONS HERE
   #
