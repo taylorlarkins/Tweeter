@@ -118,6 +118,81 @@ Resources:
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
+          /follow/getIsFollowerStatus:
+            post:
+              summary: "Get Is Follower Status"
+              description: "Returns whether a user follows another specified user."
+              consumes: *commonConsumes
+              produces: *commonProduces
+              x-amazon-apigateway-integration:
+                type: aws
+                httpMethod: POST
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getIsFollowerStatusFunction.Arn}/invocations
+                requestTemplates: *commonRequestTemplates
+                responses: *commonAmazonResponses
+              responses: *commonSwaggerResponses
+
+          /follow/getFolloweeCount:
+            post:
+              summary: "Get Followee Count"
+              description: "Returns the number of users that the specified user is following."
+              consumes: *commonConsumes
+              produces: *commonProduces
+              x-amazon-apigateway-integration:
+                type: aws
+                httpMethod: POST
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getFolloweeCountFunction.Arn}/invocations
+                requestTemplates: *commonRequestTemplates
+                responses: *commonAmazonResponses
+              responses: *commonSwaggerResponses
+
+          /follow/getFollowerCount:
+            post:
+              summary: "Get Follower Count"
+              description: "Returns the number of users who follow the specified user."
+              consumes: *commonConsumes
+              produces: *commonProduces
+              x-amazon-apigateway-integration:
+                type: aws
+                httpMethod: POST
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getFollowerCountFunction.Arn}/invocations
+                requestTemplates: *commonRequestTemplates
+                responses: *commonAmazonResponses
+              responses: *commonSwaggerResponses
+
+          /follow/follow:
+            post:
+              summary: "Follow"
+              description: "Follows a user on behalf of the authenticated user."
+              consumes: *commonConsumes
+              produces: *commonProduces
+              x-amazon-apigateway-integration:
+                type: aws
+                httpMethod: POST
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${followFunction.Arn}/invocations
+                requestTemplates: *commonRequestTemplates
+                responses: *commonAmazonResponses
+              responses: *commonSwaggerResponses
+
+          /follow/unfollow:
+            post:
+              summary: "Unfollow"
+              description: "Unfollows a user on behalf of the authenticated user."
+              consumes: *commonConsumes
+              produces: *commonProduces
+              x-amazon-apigateway-integration:
+                type: aws
+                httpMethod: POST
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${unfollowFunction.Arn}/invocations
+                requestTemplates: *commonRequestTemplates
+                responses: *commonAmazonResponses
+              responses: *commonSwaggerResponses
+
           #
           # TODO: ADD MORE ENDPOINT DEFINITIONS HERE
           #
@@ -173,6 +248,13 @@ Resources:
       FunctionName: getIsFollowerStatusFunction
       Handler: lambda/follow/GetIsFollowerStatusLambda.handler
       Policies: *commonPolicies
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref tweeterApi
+            Path: /follow/getIsFollowerStatus
+            Method: POST
 
   getFolloweeCountFunction:
     Type: AWS::Serverless::Function
@@ -180,6 +262,13 @@ Resources:
       FunctionName: getFolloweeCountFunction
       Handler: lambda/follow/GetFolloweeCountLambda.handler
       Policies: *commonPolicies
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref tweeterApi
+            Path: /follow/getFolloweeCount
+            Method: POST
 
   getFollowerCountFunction:
     Type: AWS::Serverless::Function
@@ -187,6 +276,13 @@ Resources:
       FunctionName: getFollowerCountFunction
       Handler: lambda/follow/GetFollowerCountLambda.handler
       Policies: *commonPolicies
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref tweeterApi
+            Path: /follow/getFollowerCount
+            Method: POST
 
   followFunction:
     Type: AWS::Serverless::Function
@@ -194,6 +290,13 @@ Resources:
       FunctionName: followFunction
       Handler: lambda/follow/FollowLambda.handler
       Policies: *commonPolicies
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref tweeterApi
+            Path: /follow/follow
+            Method: POST
 
   unfollowFunction:
     Type: AWS::Serverless::Function
@@ -201,6 +304,13 @@ Resources:
       FunctionName: unfollowFunction
       Handler: lambda/follow/UnfollowLambda.handler
       Policies: *commonPolicies
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref tweeterApi
+            Path: /follow/unfollow
+            Method: POST
 
   #
   # TODO: ADD MORE WEB API LAMBDA DEFINITIONS HERE
