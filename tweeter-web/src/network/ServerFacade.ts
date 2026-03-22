@@ -1,8 +1,13 @@
 import {
+  FollowActionRequest,
+  FollowActionResponse,
+  GetFollowCountRequest,
+  GetFollowCountResponse,
+  IsFollowerRequest,
+  IsFollowerResponse,
   PagedUserItemRequest,
   PagedUserItemResponse,
   User,
-  UserDto,
 } from "tweeter-shared";
 import { ClientCommunicator } from "./ClientCommunicator";
 
@@ -59,6 +64,84 @@ export class ServerFacade {
       } else {
         return [items, response.hasMore];
       }
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async getIsFollowerStatus(
+    request: IsFollowerRequest,
+  ): Promise<boolean> {
+    const response = await this.clientCommunicator.doPost<
+      IsFollowerRequest,
+      IsFollowerResponse
+    >(request, "/follow/getIsFollowerStatus");
+
+    if (response.success) {
+      return response.isFollower;
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async getFolloweeCount(
+    request: GetFollowCountRequest,
+  ): Promise<number> {
+    const response = await this.clientCommunicator.doPost<
+      GetFollowCountRequest,
+      GetFollowCountResponse
+    >(request, "/follow/getFolloweeCount");
+
+    if (response.success) {
+      return response.count;
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async getFollowerCount(
+    request: GetFollowCountRequest,
+  ): Promise<number> {
+    const response = await this.clientCommunicator.doPost<
+      GetFollowCountRequest,
+      GetFollowCountResponse
+    >(request, "/follow/getFollowerCount");
+
+    if (response.success) {
+      return response.count;
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async follow(request: FollowActionRequest): Promise<[number, number]> {
+    const response = await this.clientCommunicator.doPost<
+      FollowActionRequest,
+      FollowActionResponse
+    >(request, "/follow/follow");
+
+    if (response.success) {
+      return [response.followerCount, response.followeeCount];
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async unfollow(
+    request: FollowActionRequest,
+  ): Promise<[number, number]> {
+    const response = await this.clientCommunicator.doPost<
+      FollowActionRequest,
+      FollowActionResponse
+    >(request, "/follow/unfollow");
+
+    if (response.success) {
+      return [response.followerCount, response.followeeCount];
     } else {
       console.error(response);
       throw new Error(response.message ?? "Unknown server error");
