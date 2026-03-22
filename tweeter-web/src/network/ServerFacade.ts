@@ -5,8 +5,13 @@ import {
   GetFollowCountResponse,
   IsFollowerRequest,
   IsFollowerResponse,
+  PagedStatusItemRequest,
+  PagedStatusItemResponse,
   PagedUserItemRequest,
   PagedUserItemResponse,
+  PostStatusRequest,
+  PostStatusResponse,
+  Status,
   User,
 } from "tweeter-shared";
 import { ClientCommunicator } from "./ClientCommunicator";
@@ -143,6 +148,68 @@ export class ServerFacade {
     if (response.success) {
       return [response.followerCount, response.followeeCount];
     } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async getMoreFeedItems(
+    request: PagedStatusItemRequest,
+  ): Promise<[Status[], boolean]> {
+    const response = await this.clientCommunicator.doPost<
+      PagedStatusItemRequest,
+      PagedStatusItemResponse
+    >(request, "/status/getFeedItems");
+
+    const items: Status[] | null =
+      response.success && response.items
+        ? response.items.map((dto) => Status.fromDto(dto) as Status)
+        : null;
+
+    if (response.success) {
+      if (items == null) {
+        throw new Error(`No feed items found`);
+      } else {
+        return [items, response.hasMore];
+      }
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async getMoreStoryItems(
+    request: PagedStatusItemRequest,
+  ): Promise<[Status[], boolean]> {
+    const response = await this.clientCommunicator.doPost<
+      PagedStatusItemRequest,
+      PagedStatusItemResponse
+    >(request, "/status/getStoryItems");
+
+    const items: Status[] | null =
+      response.success && response.items
+        ? response.items.map((dto) => Status.fromDto(dto) as Status)
+        : null;
+
+    if (response.success) {
+      if (items == null) {
+        throw new Error(`No story items found`);
+      } else {
+        return [items, response.hasMore];
+      }
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async postStatus(request: PostStatusRequest): Promise<void> {
+    const response = await this.clientCommunicator.doPost<
+      PostStatusRequest,
+      PostStatusResponse
+    >(request, "/status/postStatus");
+
+    if (!response.success) {
       console.error(response);
       throw new Error(response.message ?? "Unknown server error");
     }
