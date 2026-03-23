@@ -1,33 +1,37 @@
 import { Buffer } from "buffer";
-import { AuthToken, User, FakeData } from "tweeter-shared";
+import {
+  AuthToken,
+  User,
+  GetUserRequest,
+  LoginRequest,
+  LogoutRequest,
+  RegisterRequest,
+} from "tweeter-shared";
 import { Service } from "./Service";
+import { ServerFacade } from "../../network/ServerFacade";
 
 export class UserService implements Service {
+  private serverFacade: ServerFacade = new ServerFacade();
+
   public async getUser(
     authToken: AuthToken,
     alias: string,
   ): Promise<User | null> {
-    // TODO: Replace with the result of calling server
-    return FakeData.instance.findUserByAlias(alias);
+    const req: GetUserRequest = { token: authToken.token, alias };
+    return await this.serverFacade.getUser(req);
   }
 
   public async login(
     alias: string,
     password: string,
   ): Promise<[User, AuthToken]> {
-    // TODO: Replace with the result of calling the server
-    const user = FakeData.instance.firstUser;
-
-    if (user === null) {
-      throw new Error("Invalid alias or password");
-    }
-
-    return [user, FakeData.instance.authToken];
+    const req: LoginRequest = { alias, password };
+    return await this.serverFacade.login(req);
   }
 
   public async logout(authToken: AuthToken): Promise<void> {
-    // Pause so we can see the logging out message. Delete when the call to the server is implemented.
-    await new Promise((res) => setTimeout(res, 1000));
+    const req: LogoutRequest = { token: authToken.token };
+    await this.serverFacade.logout(req);
   }
 
   public async register(
@@ -38,17 +42,15 @@ export class UserService implements Service {
     userImageBytes: Uint8Array,
     imageFileExtension: string,
   ): Promise<[User, AuthToken]> {
-    // Not neded now, but will be needed when you make the request to the server in milestone 3
-    const imageStringBase64: string =
-      Buffer.from(userImageBytes).toString("base64");
-
-    // TODO: Replace with the result of calling the server
-    const user = FakeData.instance.firstUser;
-
-    if (user === null) {
-      throw new Error("Invalid registration");
-    }
-
-    return [user, FakeData.instance.authToken];
+    const userImageBase64 = Buffer.from(userImageBytes).toString("base64");
+    const req: RegisterRequest = {
+      firstName,
+      lastName,
+      alias,
+      password,
+      userImageBase64,
+      imageFileExtension,
+    };
+    return await this.serverFacade.register(req);
   }
 }

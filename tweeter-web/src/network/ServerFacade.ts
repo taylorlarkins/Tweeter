@@ -1,16 +1,25 @@
 import {
+  AuthToken,
   FollowActionRequest,
   FollowActionResponse,
   GetFollowCountRequest,
   GetFollowCountResponse,
+  GetUserRequest,
+  GetUserResponse,
   IsFollowerRequest,
   IsFollowerResponse,
+  LoginRequest,
+  LoginResponse,
+  LogoutRequest,
+  LogoutResponse,
   PagedStatusItemRequest,
   PagedStatusItemResponse,
   PagedUserItemRequest,
   PagedUserItemResponse,
   PostStatusRequest,
   PostStatusResponse,
+  RegisterRequest,
+  RegisterResponse,
   Status,
   User,
 } from "tweeter-shared";
@@ -210,6 +219,66 @@ export class ServerFacade {
     >(request, "/status/postStatus");
 
     if (!response.success) {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async getUser(request: GetUserRequest): Promise<User | null> {
+    const response = await this.clientCommunicator.doPost<
+      GetUserRequest,
+      GetUserResponse
+    >(request, "/user/getUser");
+
+    if (response.success) {
+      return User.fromDto(response.user);
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async login(request: LoginRequest): Promise<[User, AuthToken]> {
+    const response = await this.clientCommunicator.doPost<
+      LoginRequest,
+      LoginResponse
+    >(request, "/user/login");
+
+    if (response.success) {
+      return [
+        User.fromDto(response.user) as User,
+        AuthToken.fromDto(response.authToken) as AuthToken,
+      ];
+    } else {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async logout(request: LogoutRequest): Promise<void> {
+    const response = await this.clientCommunicator.doPost<
+      LogoutRequest,
+      LogoutResponse
+    >(request, "/user/logout");
+
+    if (!response.success) {
+      console.error(response);
+      throw new Error(response.message ?? "Unknown server error");
+    }
+  }
+
+  public async register(request: RegisterRequest): Promise<[User, AuthToken]> {
+    const response = await this.clientCommunicator.doPost<
+      RegisterRequest,
+      RegisterResponse
+    >(request, "/user/register");
+
+    if (response.success) {
+      return [
+        User.fromDto(response.user) as User,
+        AuthToken.fromDto(response.authToken) as AuthToken,
+      ];
+    } else {
       console.error(response);
       throw new Error(response.message ?? "Unknown server error");
     }

@@ -1,54 +1,46 @@
-import { Buffer } from "buffer";
-import { AuthToken, User, FakeData } from "tweeter-shared";
+import { AuthTokenDto, FakeData, UserDto } from "tweeter-shared";
 import { Service } from "./Service";
 
 export class UserService implements Service {
   public async getUser(
-    authToken: AuthToken,
+    _token: string,
     alias: string,
-  ): Promise<User | null> {
-    // TODO: Replace with the result of calling server
-    return FakeData.instance.findUserByAlias(alias);
+  ): Promise<UserDto | null> {
+    const user = FakeData.instance.findUserByAlias(alias);
+    return user == null ? null : user.dto;
   }
 
   public async login(
-    alias: string,
-    password: string,
-  ): Promise<[User, AuthToken]> {
-    // TODO: Replace with the result of calling the server
+    _alias: string,
+    _password: string,
+  ): Promise<[UserDto, AuthTokenDto]> {
     const user = FakeData.instance.firstUser;
 
     if (user === null) {
       throw new Error("Invalid alias or password");
     }
 
-    return [user, FakeData.instance.authToken];
+    return [user.dto, FakeData.instance.authToken.dto];
   }
 
-  public async logout(authToken: AuthToken): Promise<void> {
-    // Pause so we can see the logging out message. Delete when the call to the server is implemented.
-    await new Promise((res) => setTimeout(res, 1000));
+  public async logout(_token: string): Promise<void> {
+    // TODO: Invalidate the auth token on the server
   }
 
   public async register(
-    firstName: string,
-    lastName: string,
-    alias: string,
-    password: string,
-    userImageBytes: Uint8Array,
-    imageFileExtension: string,
-  ): Promise<[User, AuthToken]> {
-    // Not neded now, but will be needed when you make the request to the server in milestone 3
-    const imageStringBase64: string =
-      Buffer.from(userImageBytes).toString("base64");
-
-    // TODO: Replace with the result of calling the server
+    _firstName: string,
+    _lastName: string,
+    _alias: string,
+    _password: string,
+    _userImageBase64: string,
+    _imageFileExtension: string,
+  ): Promise<[UserDto, AuthTokenDto]> {
     const user = FakeData.instance.firstUser;
 
     if (user === null) {
       throw new Error("Invalid registration");
     }
 
-    return [user, FakeData.instance.authToken];
+    return [user.dto, FakeData.instance.authToken.dto];
   }
 }
