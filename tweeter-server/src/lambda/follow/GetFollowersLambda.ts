@@ -1,7 +1,8 @@
+import { UserDto } from "tweeter-shared";
 import { FollowService } from "../../model/service/FollowService";
-import { makePagedUserItemHandler } from "./PagedUserItemHandlerFactory";
+import { makePagedItemHandler } from "./HandlerFactories";
 
 const followService = new FollowService();
-export const handler = makePagedUserItemHandler(
+export const handler = makePagedItemHandler<UserDto>(
   followService.loadMoreFollowers.bind(followService),
 );
