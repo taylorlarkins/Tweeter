@@ -1,4 +1,5 @@
 import {
+  AuthResponse,
   AuthToken,
   FollowActionRequest,
   FollowActionResponse,
@@ -9,19 +10,16 @@ import {
   IsFollowerRequest,
   IsFollowerResponse,
   LoginRequest,
-  LoginResponse,
   LogoutRequest,
-  LogoutResponse,
-  PagedStatusItemRequest,
-  PagedStatusItemResponse,
-  PagedUserItemRequest,
-  PagedUserItemResponse,
+  PagedItemRequest,
+  PagedItemResponse,
   PostStatusRequest,
-  PostStatusResponse,
   RegisterRequest,
-  RegisterResponse,
   Status,
+  StatusDto,
+  TweeterResponse,
   User,
+  UserDto,
 } from "tweeter-shared";
 import { ClientCommunicator } from "./ClientCommunicator";
 
@@ -30,58 +28,56 @@ export class ServerFacade {
     "https://wqfyievo5m.execute-api.us-east-1.amazonaws.com/prod";
   private clientCommunicator = new ClientCommunicator(this.SERVER_URL);
 
-  public async getMoreFollowees(
-    request: PagedUserItemRequest,
-  ): Promise<[User[], boolean]> {
-    const response = await this.clientCommunicator.doPost<
-      PagedUserItemRequest,
-      PagedUserItemResponse
-    >(request, "/follow/getFollowees");
-
-    // Convert the UserDto array returned by ClientCommunicator to a User array
-    const items: User[] | null =
-      response.success && response.items
-        ? response.items.map((dto) => User.fromDto(dto) as User)
-        : null;
-
-    // Handle errors
-    if (response.success) {
-      if (items == null) {
-        throw new Error(`No followees found`);
-      } else {
-        return [items, response.hasMore];
-      }
-    } else {
+  private throwIfError(response: TweeterResponse): void {
+    if (!response.success) {
       console.error(response);
       throw new Error(response.message ?? "Unknown server error");
     }
   }
 
-  public async getMoreFollowers(
-    request: PagedUserItemRequest,
-  ): Promise<[User[], boolean]> {
+  private async getPagedItems<T, D>(
+    request: PagedItemRequest<D>,
+    endpoint: string,
+    fromDto: (dto: D | null) => T | null,
+    emptyError: string,
+  ): Promise<[T[], boolean]> {
     const response = await this.clientCommunicator.doPost<
-      PagedUserItemRequest,
-      PagedUserItemResponse
-    >(request, "/follow/getFollowers");
+      PagedItemRequest<D>,
+      PagedItemResponse<D>
+    >(request, endpoint);
+    this.throwIfError(response);
+    const items = response.items?.map((dto) => fromDto(dto) as T) ?? null;
+    if (items == null) throw new Error(emptyError);
+    return [items, response.hasMore];
+  }
 
-    // Convert the UserDto array returned by ClientCommunicator to a User array
-    const items: User[] | null =
-      response.success && response.items
-        ? response.items.map((dto) => User.fromDto(dto) as User)
-        : null;
+  private extractUserAuth(response: AuthResponse): [User, AuthToken] {
+    return [
+      User.fromDto(response.user) as User,
+      AuthToken.fromDto(response.authToken) as AuthToken,
+    ];
+  }
 
-    // Handle errors
-    if (response.success) {
-      if (items == null) {
-        throw new Error(`No followers found`);
-      } else {
-        return [items, response.hasMore];
-      }
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+  public async getMoreFollowees(
+    request: PagedItemRequest<UserDto>,
+  ): Promise<[User[], boolean]> {
+    return this.getPagedItems(
+      request,
+      "/follow/getFollowees",
+      User.fromDto,
+      "No followees found",
+    );
+  }
+
+  public async getMoreFollowers(
+    request: PagedItemRequest<UserDto>,
+  ): Promise<[User[], boolean]> {
+    return this.getPagedItems(
+      request,
+      "/follow/getFollowers",
+      User.fromDto,
+      "No followers found",
+    );
   }
 
   public async getIsFollowerStatus(
@@ -91,13 +87,8 @@ export class ServerFacade {
       IsFollowerRequest,
       IsFollowerResponse
     >(request, "/follow/getIsFollowerStatus");
-
-    if (response.success) {
-      return response.isFollower;
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
+    return response.isFollower;
   }
 
   public async getFolloweeCount(
@@ -107,13 +98,8 @@ export class ServerFacade {
       GetFollowCountRequest,
       GetFollowCountResponse
     >(request, "/follow/getFolloweeCount");
-
-    if (response.success) {
-      return response.count;
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
+    return response.count;
   }
 
   public async getFollowerCount(
@@ -123,13 +109,8 @@ export class ServerFacade {
       GetFollowCountRequest,
       GetFollowCountResponse
     >(request, "/follow/getFollowerCount");
-
-    if (response.success) {
-      return response.count;
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
+    return response.count;
   }
 
   public async follow(request: FollowActionRequest): Promise<[number, number]> {
@@ -137,13 +118,8 @@ export class ServerFacade {
       FollowActionRequest,
       FollowActionResponse
     >(request, "/follow/follow");
-
-    if (response.success) {
-      return [response.followerCount, response.followeeCount];
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
+    return [response.followerCount, response.followeeCount];
   }
 
   public async unfollow(
@@ -153,75 +129,38 @@ export class ServerFacade {
       FollowActionRequest,
       FollowActionResponse
     >(request, "/follow/unfollow");
-
-    if (response.success) {
-      return [response.followerCount, response.followeeCount];
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
+    return [response.followerCount, response.followeeCount];
   }
 
   public async getMoreFeedItems(
-    request: PagedStatusItemRequest,
+    request: PagedItemRequest<StatusDto>,
   ): Promise<[Status[], boolean]> {
-    const response = await this.clientCommunicator.doPost<
-      PagedStatusItemRequest,
-      PagedStatusItemResponse
-    >(request, "/status/getFeedItems");
-
-    const items: Status[] | null =
-      response.success && response.items
-        ? response.items.map((dto) => Status.fromDto(dto) as Status)
-        : null;
-
-    if (response.success) {
-      if (items == null) {
-        throw new Error(`No feed items found`);
-      } else {
-        return [items, response.hasMore];
-      }
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    return this.getPagedItems(
+      request,
+      "/status/getFeedItems",
+      Status.fromDto,
+      "No feed items found",
+    );
   }
 
   public async getMoreStoryItems(
-    request: PagedStatusItemRequest,
+    request: PagedItemRequest<StatusDto>,
   ): Promise<[Status[], boolean]> {
-    const response = await this.clientCommunicator.doPost<
-      PagedStatusItemRequest,
-      PagedStatusItemResponse
-    >(request, "/status/getStoryItems");
-
-    const items: Status[] | null =
-      response.success && response.items
-        ? response.items.map((dto) => Status.fromDto(dto) as Status)
-        : null;
-
-    if (response.success) {
-      if (items == null) {
-        throw new Error(`No story items found`);
-      } else {
-        return [items, response.hasMore];
-      }
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    return this.getPagedItems(
+      request,
+      "/status/getStoryItems",
+      Status.fromDto,
+      "No story items found",
+    );
   }
 
   public async postStatus(request: PostStatusRequest): Promise<void> {
     const response = await this.clientCommunicator.doPost<
       PostStatusRequest,
-      PostStatusResponse
+      TweeterResponse
     >(request, "/status/postStatus");
-
-    if (!response.success) {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
   }
 
   public async getUser(request: GetUserRequest): Promise<User | null> {
@@ -229,58 +168,33 @@ export class ServerFacade {
       GetUserRequest,
       GetUserResponse
     >(request, "/user/getUser");
-
-    if (response.success) {
-      return User.fromDto(response.user);
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
+    return User.fromDto(response.user);
   }
 
   public async login(request: LoginRequest): Promise<[User, AuthToken]> {
     const response = await this.clientCommunicator.doPost<
       LoginRequest,
-      LoginResponse
+      AuthResponse
     >(request, "/user/login");
-
-    if (response.success) {
-      return [
-        User.fromDto(response.user) as User,
-        AuthToken.fromDto(response.authToken) as AuthToken,
-      ];
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
+    return this.extractUserAuth(response);
   }
 
   public async logout(request: LogoutRequest): Promise<void> {
     const response = await this.clientCommunicator.doPost<
       LogoutRequest,
-      LogoutResponse
+      TweeterResponse
     >(request, "/user/logout");
-
-    if (!response.success) {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
   }
 
   public async register(request: RegisterRequest): Promise<[User, AuthToken]> {
     const response = await this.clientCommunicator.doPost<
       RegisterRequest,
-      RegisterResponse
+      AuthResponse
     >(request, "/user/register");
-
-    if (response.success) {
-      return [
-        User.fromDto(response.user) as User,
-        AuthToken.fromDto(response.authToken) as AuthToken,
-      ];
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? "Unknown server error");
-    }
+    this.throwIfError(response);
+    return this.extractUserAuth(response);
   }
 }

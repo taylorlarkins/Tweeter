@@ -1,4 +1,4 @@
-import { PagedUserItemRequest, PagedUserItemResponse, UserDto } from "tweeter-shared";
+import { PagedItemRequest, PagedItemResponse, UserDto } from "tweeter-shared";
 
 type PagedUserLoader = (
   token: string,
@@ -9,7 +9,7 @@ type PagedUserLoader = (
 
 export function makePagedUserItemHandler(
   loader: PagedUserLoader,
-): (request: PagedUserItemRequest) => Promise<PagedUserItemResponse> {
+): (request: PagedItemRequest<UserDto>) => Promise<PagedItemResponse<UserDto>> {
   return async (request) => {
     const [items, hasMore] = await loader(
       request.token,

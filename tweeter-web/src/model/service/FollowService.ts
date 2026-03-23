@@ -1,7 +1,8 @@
 import {
   AuthToken,
   User,
-  PagedUserItemRequest,
+  PagedItemRequest,
+  UserDto,
   IsFollowerRequest,
   GetFollowCountRequest,
   FollowActionRequest,
@@ -18,7 +19,7 @@ export class FollowService implements Service {
     pageSize: number,
     lastItem: User | null,
   ): Promise<[User[], boolean]> {
-    const req: PagedUserItemRequest = {
+    const req: PagedItemRequest<UserDto> = {
       token: authToken.token,
       userAlias: userAlias,
       pageSize: pageSize,
@@ -33,7 +34,7 @@ export class FollowService implements Service {
     pageSize: number,
     lastItem: User | null,
   ): Promise<[User[], boolean]> {
-    const req: PagedUserItemRequest = {
+    const req: PagedItemRequest<UserDto> = {
       token: authToken.token,
       userAlias: userAlias,
       pageSize: pageSize,

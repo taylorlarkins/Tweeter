@@ -1,7 +1,8 @@
 import {
   AuthToken,
   Status,
-  PagedStatusItemRequest,
+  PagedItemRequest,
+  StatusDto,
   PostStatusRequest,
 } from "tweeter-shared";
 import { Service } from "./Service";
@@ -16,7 +17,7 @@ export class StatusService implements Service {
     pageSize: number,
     lastItem: Status | null,
   ): Promise<[Status[], boolean]> {
-    const req: PagedStatusItemRequest = {
+    const req: PagedItemRequest<StatusDto> = {
       token: authToken.token,
       userAlias: userAlias,
       pageSize: pageSize,
@@ -31,7 +32,7 @@ export class StatusService implements Service {
     pageSize: number,
     lastItem: Status | null,
   ): Promise<[Status[], boolean]> {
-    const req: PagedStatusItemRequest = {
+    const req: PagedItemRequest<StatusDto> = {
       token: authToken.token,
       userAlias: userAlias,
       pageSize: pageSize,
