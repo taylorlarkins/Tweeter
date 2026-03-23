@@ -11,7 +11,7 @@ import {
   verify,
   when,
 } from "@typestrong/ts-mockito";
-import { UserService } from "../../src/model.service/UserService";
+import { UserService } from "../../src/model/service/UserService";
 
 describe("AppNavbarPresenter", () => {
   let mockAppNavbarPresenterView: AppNavbarView;

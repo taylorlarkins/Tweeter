@@ -12,7 +12,7 @@ import {
   verify,
   when,
 } from "@typestrong/ts-mockito";
-import { StatusService } from "../../src/model.service/StatusService";
+import { StatusService } from "../../src/model/service/StatusService";
 
 describe("PostStatusPresenter", () => {
   let mockPostStatusPresenterView: PostStatusView;
