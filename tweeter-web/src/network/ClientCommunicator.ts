@@ -40,7 +40,8 @@ export class ClientCommunicator {
         return response;
       } else {
         const error = await resp.json();
-        throw new Error(error.errorMessage);
+        const message = (error.error as string)?.replace(/^\[.*?\]\s*/, "") ?? "Server error";
+        throw new Error(message);
       }
     } catch (error) {
       console.error(error);
