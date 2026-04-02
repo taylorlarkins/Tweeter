@@ -58,9 +58,7 @@ const UserInfoProvider: React.FC<Props> = ({ children }) => {
         };
       });
 
-      if (remember) {
-        saveToLocalStorage(currentUser, authToken);
-      }
+      saveToLocalStorage(currentUser, authToken);
     },
     [],
   );
