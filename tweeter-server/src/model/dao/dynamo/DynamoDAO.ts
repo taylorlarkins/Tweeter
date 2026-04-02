@@ -32,7 +32,7 @@ export abstract class DynamoDAO {
   }
 
   protected async get(
-    params: GetCommandInput
+    params: GetCommandInput,
   ): Promise<Record<string, unknown> | undefined> {
     const result = await this.client.send(new GetCommand(params));
     return result.Item as Record<string, unknown> | undefined;
@@ -59,7 +59,7 @@ export abstract class DynamoDAO {
 
   protected async batchWrite(
     tableName: string,
-    items: Record<string, unknown>[]
+    items: Record<string, unknown>[],
   ): Promise<void> {
     const BATCH_SIZE = 25;
     for (let i = 0; i < items.length; i += BATCH_SIZE) {
@@ -71,7 +71,7 @@ export abstract class DynamoDAO {
               PutRequest: { Item: item },
             })),
           },
-        })
+        }),
       );
     }
   }

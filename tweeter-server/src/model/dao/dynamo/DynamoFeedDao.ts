@@ -7,11 +7,11 @@ export class DynamoFeedDao extends DynamoDAO implements IFeedDao {
 
   async putFeedItems(
     followerAliases: string[],
-    status: StatusDto
+    status: StatusDto,
   ): Promise<void> {
     if (followerAliases.length === 0) return;
     const items = followerAliases.map((alias) =>
-      this.buildFeedItem(alias, status)
+      this.buildFeedItem(alias, status),
     );
     await this.batchWrite(this.TABLE, items);
   }
@@ -19,7 +19,7 @@ export class DynamoFeedDao extends DynamoDAO implements IFeedDao {
   async getPageOfFeedItems(
     followerAlias: string,
     pageSize: number,
-    lastTimestamp: number | null
+    lastTimestamp: number | null,
   ): Promise<[StatusDto[], boolean]> {
     const params: Record<string, unknown> = {
       TableName: this.TABLE,
@@ -35,7 +35,7 @@ export class DynamoFeedDao extends DynamoDAO implements IFeedDao {
       };
     }
     const { items, lastKey } = await this.query(
-      params as Parameters<typeof this.query>[0]
+      params as Parameters<typeof this.query>[0],
     );
     return [
       items.map((item) => ({
@@ -54,7 +54,7 @@ export class DynamoFeedDao extends DynamoDAO implements IFeedDao {
 
   private buildFeedItem(
     followerAlias: string,
-    status: StatusDto
+    status: StatusDto,
   ): Record<string, unknown> {
     return {
       follower_alias: followerAlias,
