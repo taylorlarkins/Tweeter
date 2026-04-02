@@ -40,16 +40,13 @@ export class ClientCommunicator {
         return response;
       } else {
         const error = await resp.json();
-        const message = (error.error as string)?.replace(/^\[.*?\]\s*/, "") ?? "Server error";
+        const message =
+          (error.error as string)?.replace(/^\[.*?\]\s*/, "") ?? "Server error";
         throw new Error(message);
       }
     } catch (error) {
       console.error(error);
-      throw new Error(
-        `Client communicator ${params.method} failed:\n${
-          (error as Error).message
-        }`,
-      );
+      throw new Error((error as Error).message);
     }
   }
 
