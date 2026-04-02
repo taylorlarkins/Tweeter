@@ -1,8 +1,7 @@
 import { IAuthTokenDao } from "../dao/interface/IAuthTokenDao";
 import { DAOFactory } from "../dao/factory/DAOFactory";
 
-const TOKEN_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours of inactivity
-
+const TOKEN_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes of inactivity
 export class AuthorizationService {
   private readonly authTokenDao: IAuthTokenDao;
 
@@ -11,7 +10,8 @@ export class AuthorizationService {
   }
 
   async validateToken(token: string): Promise<void> {
-    const storedTimestamp = await this.authTokenDao.getAuthTokenTimestamp(token);
+    const storedTimestamp =
+      await this.authTokenDao.getAuthTokenTimestamp(token);
 
     if (storedTimestamp === null) {
       throw new Error("[bad-request] Invalid or expired auth token");
