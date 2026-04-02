@@ -1,46 +1,74 @@
-import { AuthTokenDto, FakeData, UserDto } from "tweeter-shared";
+import { AuthToken, AuthTokenDto, UserDto } from "tweeter-shared";
+import * as bcryptjs from "bcryptjs";
 import { Service } from "./Service";
 
-export class UserService implements Service {
-  public async getUser(
-    _token: string,
-    alias: string,
-  ): Promise<UserDto | null> {
-    const user = FakeData.instance.findUserByAlias(alias);
-    return user == null ? null : user.dto;
-  }
+const SALT_ROUNDS = 10;
 
+export class UserService extends Service {
   public async login(
-    _alias: string,
-    _password: string,
+    alias: string,
+    password: string
   ): Promise<[UserDto, AuthTokenDto]> {
-    const user = FakeData.instance.firstUser;
+    const userDao = this.factory.getUserDao();
+    const authTokenDao = this.factory.getAuthTokenDao();
 
-    if (user === null) {
-      throw new Error("Invalid alias or password");
+    const hash = await userDao.getPasswordHash(alias);
+    if (hash === null) {
+      throw new Error("[bad-request] Invalid alias or password");
     }
 
-    return [user.dto, FakeData.instance.authToken.dto];
-  }
+    const match = await bcryptjs.compare(password, hash);
+    if (!match) {
+      throw new Error("[bad-request] Invalid alias or password");
+    }
 
-  public async logout(_token: string): Promise<void> {
-    // TODO: Invalidate the auth token on the server
+    const user = await userDao.getUser(alias);
+    if (!user) {
+      throw new Error(
+        "[internal-server-error] User not found after successful auth"
+      );
+    }
+
+    const authToken = AuthToken.Generate();
+    await authTokenDao.putAuthToken(authToken.token, authToken.timestamp, alias);
+
+    return [user, authToken.dto];
   }
 
   public async register(
-    _firstName: string,
-    _lastName: string,
-    _alias: string,
-    _password: string,
-    _userImageBase64: string,
-    _imageFileExtension: string,
+    firstName: string,
+    lastName: string,
+    alias: string,
+    password: string,
+    userImageBase64: string,
+    imageFileExtension: string
   ): Promise<[UserDto, AuthTokenDto]> {
-    const user = FakeData.instance.firstUser;
+    const userDao = this.factory.getUserDao();
+    const authTokenDao = this.factory.getAuthTokenDao();
+    const s3Dao = this.factory.getS3Dao();
 
-    if (user === null) {
-      throw new Error("Invalid registration");
-    }
+    const imageUrl = await s3Dao.uploadImage(
+      alias,
+      userImageBase64,
+      imageFileExtension
+    );
+    const passwordHash = await bcryptjs.hash(password, SALT_ROUNDS);
 
-    return [user.dto, FakeData.instance.authToken.dto];
+    await userDao.createUser(firstName, lastName, alias, passwordHash, imageUrl);
+
+    const user: UserDto = { alias, firstName, lastName, imageUrl };
+    const authToken = AuthToken.Generate();
+    await authTokenDao.putAuthToken(authToken.token, authToken.timestamp, alias);
+
+    return [user, authToken.dto];
+  }
+
+  public async logout(token: string): Promise<void> {
+    await this.factory.getAuthTokenDao().deleteAuthToken(token);
+  }
+
+  public async getUser(token: string, alias: string): Promise<UserDto | null> {
+    await this.authService.validateToken(token);
+    return this.factory.getUserDao().getUser(alias);
   }
 }

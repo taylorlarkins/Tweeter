@@ -1,37 +1,44 @@
-import { Status, StatusDto, FakeData } from "tweeter-shared";
+import { StatusDto } from "tweeter-shared";
 import { Service } from "./Service";
 
-export class StatusService implements Service {
+export class StatusService extends Service {
   public async loadMoreFeedItems(
-    _token: string,
-    _userAlias: string,
+    token: string,
+    userAlias: string,
     pageSize: number,
-    lastItem: StatusDto | null,
+    lastItem: StatusDto | null
   ): Promise<[StatusDto[], boolean]> {
-    const [items, hasMore] = FakeData.instance.getPageOfStatuses(
-      Status.fromDto(lastItem),
-      pageSize,
-    );
-    return [items.map((s) => s.dto), hasMore];
+    await this.authService.validateToken(token);
+    const lastTimestamp = lastItem?.timestamp ?? null;
+    return this.factory
+      .getFeedDao()
+      .getPageOfFeedItems(userAlias, pageSize, lastTimestamp);
   }
 
   public async loadMoreStoryItems(
-    _token: string,
-    _userAlias: string,
+    token: string,
+    userAlias: string,
     pageSize: number,
-    lastItem: StatusDto | null,
+    lastItem: StatusDto | null
   ): Promise<[StatusDto[], boolean]> {
-    const [items, hasMore] = FakeData.instance.getPageOfStatuses(
-      Status.fromDto(lastItem),
-      pageSize,
-    );
-    return [items.map((s) => s.dto), hasMore];
+    await this.authService.validateToken(token);
+    const lastTimestamp = lastItem?.timestamp ?? null;
+    return this.factory
+      .getStatusDao()
+      .getPageOfStatuses(userAlias, pageSize, lastTimestamp);
   }
 
-  public async postStatus(
-    _token: string,
-    _newStatus: StatusDto,
-  ): Promise<void> {
-    // TODO: Call the server to post the status
+  public async postStatus(token: string, newStatus: StatusDto): Promise<void> {
+    await this.authService.validateToken(token);
+    const statusDao = this.factory.getStatusDao();
+    const feedDao = this.factory.getFeedDao();
+    const followDao = this.factory.getFollowDao();
+
+    await statusDao.putStatus(newStatus);
+
+    const followers = await followDao.getAllFollowers(newStatus.user.alias);
+    if (followers.length > 0) {
+      await feedDao.putFeedItems(followers, newStatus);
+    }
   }
 }

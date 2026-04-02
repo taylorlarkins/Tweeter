@@ -1,76 +1,121 @@
-import { FakeData, User, UserDto } from "tweeter-shared";
+import { UserDto } from "tweeter-shared";
 import { Service } from "./Service";
 
-export class FollowService implements Service {
+export class FollowService extends Service {
   public async loadMoreFollowees(
     token: string,
     userAlias: string,
     pageSize: number,
-    lastItem: UserDto | null,
+    lastItem: UserDto | null
   ): Promise<[UserDto[], boolean]> {
-    return this.getFakeData(lastItem, pageSize, userAlias);
+    await this.authService.validateToken(token);
+    const followDao = this.factory.getFollowDao();
+    const userDao = this.factory.getUserDao();
+    const lastAlias = lastItem?.alias ?? null;
+    const [aliases, hasMore] = await followDao.getPageOfFollowees(
+      userAlias,
+      pageSize,
+      lastAlias
+    );
+    const users = await Promise.all(aliases.map((a) => userDao.getUser(a)));
+    return [users.filter((u): u is UserDto => u !== null), hasMore];
   }
 
   public async loadMoreFollowers(
     token: string,
     userAlias: string,
     pageSize: number,
-    lastItem: UserDto | null,
+    lastItem: UserDto | null
   ): Promise<[UserDto[], boolean]> {
-    return this.getFakeData(lastItem, pageSize, userAlias);
+    await this.authService.validateToken(token);
+    const followDao = this.factory.getFollowDao();
+    const userDao = this.factory.getUserDao();
+    const lastAlias = lastItem?.alias ?? null;
+    const [aliases, hasMore] = await followDao.getPageOfFollowers(
+      userAlias,
+      pageSize,
+      lastAlias
+    );
+    const users = await Promise.all(aliases.map((a) => userDao.getUser(a)));
+    return [users.filter((u): u is UserDto => u !== null), hasMore];
   }
 
   public async getIsFollowerStatus(
-    _token: string,
-    _userAlias: string,
-    _selectedUserAlias: string,
-  ): Promise<boolean> {
-    return FakeData.instance.isFollower();
-  }
-
-  public async getFolloweeCount(
-    _token: string,
+    token: string,
     userAlias: string,
-  ): Promise<number> {
-    return FakeData.instance.getFolloweeCount(userAlias);
+    selectedUserAlias: string
+  ): Promise<boolean> {
+    await this.authService.validateToken(token);
+    return this.factory
+      .getFollowDao()
+      .getIsFollower(userAlias, selectedUserAlias);
   }
 
   public async getFollowerCount(
-    _token: string,
-    userAlias: string,
+    token: string,
+    userAlias: string
   ): Promise<number> {
-    return FakeData.instance.getFollowerCount(userAlias);
+    await this.authService.validateToken(token);
+    return this.factory.getUserDao().getFollowerCount(userAlias);
+  }
+
+  public async getFolloweeCount(
+    token: string,
+    userAlias: string
+  ): Promise<number> {
+    await this.authService.validateToken(token);
+    return this.factory.getUserDao().getFolloweeCount(userAlias);
   }
 
   public async follow(
     token: string,
-    user: UserDto,
+    user: UserDto
   ): Promise<[followerCount: number, followeeCount: number]> {
-    const followerCount = await this.getFollowerCount(token, user.alias);
-    const followeeCount = await this.getFolloweeCount(token, user.alias);
+    await this.authService.validateToken(token);
+    const followerAlias = await this.getAliasFromToken(token);
+    const followDao = this.factory.getFollowDao();
+    const userDao = this.factory.getUserDao();
+
+    await followDao.putFollow(followerAlias, user.alias);
+    await Promise.all([
+      userDao.updateFollowerCount(user.alias, 1),
+      userDao.updateFolloweeCount(followerAlias, 1),
+    ]);
+
+    const [followerCount, followeeCount] = await Promise.all([
+      userDao.getFollowerCount(user.alias),
+      userDao.getFolloweeCount(user.alias),
+    ]);
     return [followerCount, followeeCount];
   }
 
   public async unfollow(
     token: string,
-    user: UserDto,
+    user: UserDto
   ): Promise<[followerCount: number, followeeCount: number]> {
-    const followerCount = await this.getFollowerCount(token, user.alias);
-    const followeeCount = await this.getFolloweeCount(token, user.alias);
+    await this.authService.validateToken(token);
+    const followerAlias = await this.getAliasFromToken(token);
+    const followDao = this.factory.getFollowDao();
+    const userDao = this.factory.getUserDao();
+
+    await followDao.deleteFollow(followerAlias, user.alias);
+    await Promise.all([
+      userDao.updateFollowerCount(user.alias, -1),
+      userDao.updateFolloweeCount(followerAlias, -1),
+    ]);
+
+    const [followerCount, followeeCount] = await Promise.all([
+      userDao.getFollowerCount(user.alias),
+      userDao.getFolloweeCount(user.alias),
+    ]);
     return [followerCount, followeeCount];
   }
 
-  private async getFakeData(
-    lastItem: UserDto | null,
-    pageSize: number,
-    userAlias: string,
-  ): Promise<[UserDto[], boolean]> {
-    const [items, hasMore] = FakeData.instance.getPageOfUsers(
-      User.fromDto(lastItem),
-      pageSize,
-      userAlias,
-    );
-    const dtos = items.map((user) => user.dto);
-    return [dtos, hasMore];
+  private async getAliasFromToken(token: string): Promise<string> {
+    const alias = await this.factory.getAuthTokenDao().getAliasForToken(token);
+    if (!alias) {
+      throw new Error("[bad-request] Token not found");
+    }
+    return alias;
   }
 }

@@ -13,6 +13,14 @@ Globals:
       - !Ref tweeterLayer
     Timeout: 30
     MemorySize: 128
+    Environment:
+      Variables:
+        USERS_TABLE_NAME: users
+        FOLLOWS_TABLE_NAME: follows
+        STATUSES_TABLE_NAME: statuses
+        FEED_TABLE_NAME: feed
+        AUTH_TOKENS_TABLE_NAME: auth_tokens
+        S3_BUCKET_NAME: tweeter-user-images-528491
 
 #
 # Reusable blocks of configuration. These are referenced throughout the template to avoid duplication.
@@ -518,3 +526,137 @@ Resources:
   #
   # TODO: ADD MORE WEB API LAMBDA DEFINITIONS HERE
   #
+
+  #
+  # DynamoDB Tables
+  #
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: users
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      AttributeDefinitions:
+        - AttributeName: alias
+          AttributeType: S
+      KeySchema:
+        - AttributeName: alias
+          KeyType: HASH
+
+  FollowsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: follows
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      AttributeDefinitions:
+        - AttributeName: follower_alias
+          AttributeType: S
+        - AttributeName: followee_alias
+          AttributeType: S
+      KeySchema:
+        - AttributeName: follower_alias
+          KeyType: HASH
+        - AttributeName: followee_alias
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: followee-index
+          KeySchema:
+            - AttributeName: followee_alias
+              KeyType: HASH
+            - AttributeName: follower_alias
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+
+  StatusesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: statuses
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 3
+      AttributeDefinitions:
+        - AttributeName: author_alias
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: author_alias
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+
+  FeedTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: feed
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 7
+        WriteCapacityUnits: 7
+      AttributeDefinitions:
+        - AttributeName: follower_alias
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: follower_alias
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+
+  AuthTokensTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: auth_tokens
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 4
+        WriteCapacityUnits: 4
+      AttributeDefinitions:
+        - AttributeName: token
+          AttributeType: S
+      KeySchema:
+        - AttributeName: token
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  #
+  # S3 Bucket for user profile images
+  #
+
+  UserImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: tweeter-user-images-528491
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+
+  UserImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UserImagesBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::tweeter-user-images-528491/*"

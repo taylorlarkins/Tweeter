@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "npm run build:shared && npm run copy:shared && npm run compile",
+    "build": "npm run build:shared && npm run install:layer && npm run copy:shared && npm run compile",
+    "install:layer": "npm install --prefix layer/nodejs",
     "build:shared": "cd ../tweeter-shared && npm run compile",
-    "copy:shared": "cp ../tweeter-shared/package.json layer/nodejs/node_modules/tweeter-shared/ && cp -r ../tweeter-shared/dist/. layer/nodejs/node_modules/tweeter-shared/dist/",
+    "copy:shared": "mkdir -p layer/nodejs/node_modules/tweeter-shared/dist && cp ../tweeter-shared/package.json layer/nodejs/node_modules/tweeter-shared/ && cp -r ../tweeter-shared/dist/. layer/nodejs/node_modules/tweeter-shared/dist/",
     "compile": "npm run clean && tsc",
     "clean": "rimraf dist"
   },
@@ -17,5 +18,12 @@
     "date-fns": "^3.3.1",
     "tweeter-shared": "file:../tweeter-shared",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1022.0",
+    "@aws-sdk/client-s3": "^3.1022.0",
+    "@aws-sdk/lib-dynamodb": "^3.1022.0",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3"
   }
 }
