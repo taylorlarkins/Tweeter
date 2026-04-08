@@ -62,17 +62,28 @@ export abstract class DynamoDAO {
     items: Record<string, unknown>[],
   ): Promise<void> {
     const BATCH_SIZE = 25;
+    const MAX_RETRIES = 5;
+
     for (let i = 0; i < items.length; i += BATCH_SIZE) {
       const chunk = items.slice(i, i + BATCH_SIZE);
-      await this.client.send(
-        new BatchWriteCommand({
-          RequestItems: {
-            [tableName]: chunk.map((item) => ({
-              PutRequest: { Item: item },
-            })),
-          },
-        }),
-      );
+      let requests = chunk.map((item) => ({ PutRequest: { Item: item } }));
+      let delay = 50;
+
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        const result = await this.client.send(
+          new BatchWriteCommand({ RequestItems: { [tableName]: requests } }),
+        );
+        const unprocessed = result.UnprocessedItems?.[tableName];
+        if (!unprocessed || unprocessed.length === 0) break;
+        if (attempt === MAX_RETRIES) {
+          throw new Error(
+            `batchWrite failed: ${unprocessed.length} unprocessed items remain after ${MAX_RETRIES} retries`,
+          );
+        }
+        requests = unprocessed as typeof requests;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay *= 2;
+      }
     }
   }
 }

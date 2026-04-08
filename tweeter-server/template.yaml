@@ -574,6 +574,14 @@ Resources:
     Properties:
       QueueName: UpdateFeedQueue
       VisibilityTimeout: 15 # Slightly longer than updateFeedsFunction timeout (10s)
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt UpdateFeedDLQ.Arn
+        maxReceiveCount: 3
+
+  UpdateFeedDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: UpdateFeedDLQ
 
   #
   # DynamoDB Tables
