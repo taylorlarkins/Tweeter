@@ -307,7 +307,7 @@ Resources:
               responses: *commonSwaggerResponses
 
           #
-          # TODO: ADD MORE ENDPOINT DEFINITIONS HERE
+          # No additional HTTP endpoints needed for SQS-triggered lambdas
           #
 
   #
@@ -459,6 +459,9 @@ Resources:
       FunctionName: postStatusFunction
       Handler: lambda/status/PostStatusLambda.handler
       Policies: *commonPolicies
+      Environment:
+        Variables:
+          POST_STATUS_QUEUE_URL: !Ref PostStatusQueue
       Events:
         PostApi:
           Type: Api
@@ -523,9 +526,54 @@ Resources:
             Path: /user/register
             Method: POST
 
+  postUpdateFeedMessagesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: postUpdateFeedMessagesFunction
+      Handler: lambda/status/PostUpdateFeedMessagesLambda.handler
+      Policies: *commonPolicies
+      # Timeout inherits 30s from globals
+      Environment:
+        Variables:
+          UPDATE_FEED_QUEUE_URL: !Ref UpdateFeedQueue
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PostStatusQueue.Arn
+            BatchSize: 1
+
+  updateFeedsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: updateFeedsFunction
+      Handler: lambda/status/UpdateFeedsLambda.handler
+      Policies: *commonPolicies
+      Timeout: 10
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt UpdateFeedQueue.Arn
+            BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 2
+
   #
-  # TODO: ADD MORE WEB API LAMBDA DEFINITIONS HERE
+  # SQS Queues
   #
+
+  PostStatusQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PostStatusQueue
+      VisibilityTimeout: 35 # Slightly longer than postUpdateFeedMessagesFunction timeout (30s)
+
+  UpdateFeedQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: UpdateFeedQueue
+      VisibilityTimeout: 15 # Slightly longer than updateFeedsFunction timeout (10s)
 
   #
   # DynamoDB Tables
